@@ -1,36 +1,50 @@
-# TW404 Research Notes
+# TW404 UTM Server Lab
 
-私人研究筆記：整理 TalesWeaver 4.04 舊版伺服器環境的架設線索、Mac mini M1 + UTM 方案、設定檔位置與測試流程。
+私人研究筆記：以 **Mac mini M1 + UTM** 架設 TalesWeaver 4.04 繁中版伺服器環境，供本機／區網回味使用。
 
-## 目標
-
-在不公開營運、不散布檔案的前提下，研究如何於本機或區網環境回味舊版天翼之鍊。
-
-目標架構：
+## 目標架構
 
 ```text
 Mac mini M1
-  -> UTM
-  -> x86 Solaris-like guest OS
-  -> TW 4.04 server environment
+  -> UTM / QEMU x86 emulation
+  -> OpenSolaris / OpenIndiana / Solaris x86 guest
+  -> tw404t server
   -> Windows PC running 4.04 client
 ```
 
-## 主要來源
+## 主線版本
 
-本 repo 目前以 PIXNET 中文教學所列 GitHub raw 來源為主線：
+本 repo 以 PIXNET 中文教學所列 GitHub raw 來源為主線：
 
 ```text
 Mint-Fans/linux-package, Solaris branch
-- tw404j.tar.gz：日版 4.04 Server
 - tw404t.tar.gz：中文版 4.04 Server（角色可使用中文名稱，繁化度約 95%）
+- tw404j.tar.gz：日版 4.04 Server，僅作對照
 ```
 
-其中 `tw404t.tar.gz` 為優先研究對象，`tw404j.tar.gz` 作為對照。
+目前優先研究：`tw404t.tar.gz`。
+
+## 重要技術判斷
+
+已靜態分析 `tw404t.tar.gz`，核心執行檔是：
+
+```text
+db/db           -> 32-bit i386 Solaris ELF, /usr/lib/ld.so.1
+ttales0/ttales  -> 32-bit i386 Solaris ELF, /usr/lib/ld.so.1
+ttales1/ttales  -> 32-bit i386 Solaris ELF, /usr/lib/ld.so.1
+ttales2/ttales  -> 32-bit i386 Solaris ELF, /usr/lib/ld.so.1
+```
+
+所以：
+
+- Ubuntu / Linux 不適合作為 Server OS。
+- Parallels on M1 不作為主線。
+- 主線改為 UTM / QEMU 模擬 x86 Solaris-like guest。
+- OS 測試優先序：OpenIndiana -> OpenSolaris 2010 snv_134 -> Solaris 10 x86。
 
 ## 不提交原則
 
-即使本 repo 是 private，也不建議提交下列檔案：
+即使 repo 是 private，也不建議提交：
 
 - `tw404j.tar.gz`
 - `tw404t.tar.gz`
@@ -44,10 +58,10 @@ Mint-Fans/linux-package, Solaris branch
 本 repo 僅保存：
 
 - 架設筆記
-- 環境紀錄
+- 靜態分析
 - 自寫輔助腳本
-- 設定檔範本
 - troubleshooting
+- 來源清單
 
 ## 文件結構
 
@@ -55,22 +69,22 @@ Mint-Fans/linux-package, Solaris branch
 .
 ├─ README.md
 ├─ docs/
-│  ├─ 01-pixnet-mintfans-main-guide.md
-│  ├─ 02-mac-mini-utm-plan.md
-│  ├─ 03-server-layout.md
-│  ├─ 04-ip-config.md
+│  ├─ 00-utm-installation-flow.md
+│  ├─ 01-pixnet-install-flow.md
+│  ├─ 05-tw404t-static-analysis.md
 │  └─ 99-troubleshooting.md
 ├─ scripts/
-│  ├─ ip_to_tw_addr.py
-│  └─ replace_server_ip.sh
+│  └─ download_sources.sh
 ├─ references/
-│  └─ sources.md
+│  └─ preparation-tools.md
 └─ .gitignore
 ```
 
-## 目前判斷
+## 下一步
 
-1. `tw404t.tar.gz` 是最符合繁體中文回味需求的版本。
-2. Mac mini M1 可作為低功耗伺服器，但 guest OS 可能需要 x86 模擬。
-3. UTM 的 Bridge 網路最適合讓 Windows client 直接連 VM。
-4. 需避免把 client / server 檔案直接納入 repo。
+1. 在 UTM 建立 x86 Solaris-like VM。
+2. 優先測 OpenIndiana；若 library 相容性不足，再測 OpenSolaris 2010 snv_134。
+3. 解壓 `tw404t.tar.gz` 後執行 `file` / `ldd`。
+4. 補 BerkeleyDB 3.3 與 MySQL 5.0。
+5. 執行 `change-ip`、`change-hosts`、`twsrv-init`、`create-accounts`、`start-twsrv`。
+6. Windows client 修改 `IP.INI` 指向 VM IP。
