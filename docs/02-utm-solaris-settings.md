@@ -12,67 +12,68 @@
 
 本案 `tw404t` 需要 x86 Solaris-like guest，因此這篇對 UTM 設定有參考價值。
 
-## 2. 本案目前實測修正
+## 2. 本案目前實測成功設定
 
-使用者在 OpenIndiana / UTM 安裝過程遇到：
+使用者在 OpenIndiana / UTM 安裝過程中陸續遇到：
 
 ```text
 Shell>
 qemu-x86_64-softmmu: combined size ... exceeds 8388608 bytes
+Preparing text install image for use 後 reboot
+Done mounting text install image 後 reboot
 ```
 
-實測後確認只要調整：
+實測後確認以下設定可進入語言選擇與 `Welcome OpenIndiana` 安裝畫面：
+
+```text
+Architecture: x86_64
+Machine: Standard PC (i440FX + PIIX, 1996)
+UEFI Boot: Off
+Display: VGA
+Disk: IDE
+CD/DVD: IDE
+USB: Disabled
+Network: Disabled 或安裝後再加 e1000
+Sound: Disabled
+CPU Cores: 1 起測
+RAM: 2048-4096 MiB
+```
+
+關鍵修正：
 
 ```text
 UEFI Boot: Off
 Display: VGA
+Disk / CD/DVD: IDE
+USB: Disabled
 ```
-
-即可避開問題。
 
 判斷：
 
 - `Shell>` 是進入 UEFI Shell，代表不應使用 UEFI boot。
 - `combined size ... exceeds 8388608 bytes` 多半與傳統 BIOS Option ROM 空間不足相關，`virtio-vga` 可能造成 ROM 過大。
-- 改為 `VGA` 可降低開機 ROM 負擔。
-
-因此本案 OpenIndiana / UTM 主線設定應改為：
-
-```text
-Architecture: x86_64
-Machine: Standard PC (i440FX + PIIX, 1996)
-UEFI Boot: Off
-Display: VGA
-USB: Disabled
-Network: e1000 Shared Network
-Disk: VirtIO 或 IDE，若 VirtIO 有問題再改 IDE
-RAM: 4096 MiB
-CPU Cores: 2
-```
+- `Preparing text install image` / `Done mounting text install image` 後 reboot，與 VirtIO / USB / 額外裝置相容性有關。
+- 全部改 IDE 並停用 USB 後已能進入 installer。
 
 ## 3. OpenIndiana 建議設定（本案主線）
 
+目前本案以這組為主，不再優先使用 VirtIO：
+
 ```text
 Architecture: x86_64
 Machine: Standard PC (i440FX + PIIX, 1996)
 UEFI Boot: Off
-RAM: 4096 MiB
-CPU Cores: 2
+RAM: 2048-4096 MiB
+CPU Cores: 1，安裝成功後可改 2
 USB: Disabled
 Display: VGA
-Network: Intel Gigabit Ethernet (e1000), Shared Network
-Disk: VirtIO（若安裝或開機異常，改 IDE）
+Network: 先 Disabled，安裝成功後改 Intel e1000 Shared Network
+Disk: IDE
+CD/DVD: IDE
+Sound: Disabled
 ```
 
-若仍遇到 `combined size ... exceeds 8388608 bytes`：
-
-```text
-1. 確認 Display 是 VGA，不是 virtio-vga。
-2. 暫時關閉 Network。
-3. 關閉 Sound。
-4. 只保留 1 顆硬碟 + 1 個 ISO 光碟。
-5. Disk 改 IDE。
-```
+安裝成功後，先不要改硬碟控制器。安裝時用 IDE，安裝後仍維持 IDE。
 
 ## 4. Solaris 11.4 x86 成功設定摘要
 
@@ -121,29 +122,7 @@ Solaris 11.4 使用 IDE disk 較穩。
 切換成 VirtIO disk 會 boot loop。
 ```
 
-## 6. OpenIndiana 與 Solaris 11.4 差異
-
-討論串提到 OpenIndiana 類似可行，但有差異：
-
-```text
-OpenIndiana:
-- Disable USB
-- Disk: VirtIO
-- Multicore works on latest version
-
-Solaris 11.4:
-- Disk: IDE 較穩
-```
-
-本案實測補充：
-
-```text
-OpenIndiana:
-- UEFI Boot 必須 Off
-- Display 用 VGA 較穩
-```
-
-## 7. 不建議設定
+## 6. 不建議設定
 
 ### UEFI Boot
 
@@ -173,13 +152,21 @@ combined size ... exceeds 8388608 bytes
 Display: VGA
 ```
 
-### Solaris 11.4 不建議 VirtIO Disk
+### VirtIO Disk / VirtIO CD/DVD
+
+若出現：
 
 ```text
-Disk: VirtIO
+Preparing text install image for use 後 reboot
+Done mounting text install image 後 reboot
 ```
 
-原因：討論串有人回報 Solaris 11.4 會 boot loop。
+處理方式：
+
+```text
+Disk: IDE
+CD/DVD: IDE
+```
 
 ### USB 問題
 
@@ -190,11 +177,10 @@ UHCI host controller is unusable
 No SOF interrupts have been received
 ```
 
-處理方式：
+或安裝 runtime reboot，處理方式：
 
 ```text
 Disable USB
-或改 USB 2
 ```
 
 ### Machine type
@@ -218,7 +204,7 @@ maintenance mode
 Standard PC (i440FX + PIIX, 1996)
 ```
 
-## 8. 安裝完成後的第一輪檢查
+## 7. 安裝完成後的第一輪檢查
 
 ```bash
 uname -a
@@ -234,7 +220,7 @@ psrinfo -v
 不要是 sparc / sun4u / sun4v
 ```
 
-## 9. 放入 tw404t 後的檢查
+## 8. 放入 tw404t 後的檢查
 
 ```bash
 cd ~
@@ -257,26 +243,19 @@ libz.so
 
 再進入 BerkeleyDB / GCC runtime / MySQL 5.0 補齊流程。
 
-## 10. 對 TW404T 的實務結論
+## 9. 對 TW404T 的實務結論
 
-目前最值得測的兩條線：
+目前最值得測的主線：
 
 ```text
-1. OpenIndiana x86_64 on UTM
-   - i440FX + PIIX
-   - UEFI Boot Off
-   - Display VGA
-   - USB disabled
-   - Disk VirtIO first, IDE fallback
-   - Network e1000 shared
-
-2. Solaris 11.4 x86 on UTM
-   - i440FX + PIIX
-   - UEFI Boot Off
-   - CPU Opteron_G1-v1
-   - Display VGA if virtio-vga fails
-   - Disk IDE
-   - Network e1000 shared
+OpenIndiana x86_64 on UTM
+- i440FX + PIIX
+- UEFI Boot Off
+- Display VGA
+- Disk IDE
+- CD/DVD IDE
+- USB disabled
+- Network disabled during install; e1000 shared after install
 ```
 
-若 OpenIndiana 可以補齊舊 library，優先用 OpenIndiana。若 OpenIndiana 不相容，再測 Solaris 11.4。
+若 OpenIndiana 安裝後無法補齊舊 library，再測 Solaris 11.4 x86。
