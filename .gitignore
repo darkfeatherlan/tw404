@@ -1,0 +1,22 @@
+# Local downloads / proprietary or external files
+.local/
+downloads/
+tw404/
+client/
+
+# Archives and VM images
+*.rar
+*.zip
+*.7z
+*.tar.gz
+*.iso
+*.img
+*.vmdk
+*.qcow2
+*.ova
+
+# Logs
+*.log
+
+# Environment
+.env
