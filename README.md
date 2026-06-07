@@ -2,15 +2,37 @@
 
 私人研究筆記：以 **Mac mini M1 + UTM** 架設 TalesWeaver 4.04 繁中版伺服器環境，供本機／區網回味使用。
 
-## 目標架構
+## 目前實測主線
 
 ```text
 Mac mini M1
-  -> UTM / QEMU x86 emulation
-  -> OpenSolaris / OpenIndiana / Solaris x86 guest
+  -> UTM / QEMU x86_64 emulation
+  -> OpenIndiana x86 guest
   -> tw404t server
   -> Windows PC running 4.04 client
 ```
+
+## 目前已成功
+
+- OpenIndiana 已在 UTM 成功安裝，`uname` 顯示 `i386`。
+- `tw404t` 核心檔案為 32-bit i386 Solaris ELF，可被 OpenIndiana 辨識。
+- `libstdc++.so.6`、`libgcc_s.so.1` 已透過 `/usr/gcc/10/lib` 解決。
+- BerkeleyDB 3.3 已重新編譯成 32-bit 版本。
+- `db/db` 已成功啟動：
+
+```text
+ENDRE DataBase Server ready, port: 45012
+```
+
+## 目前卡點
+
+正在補 **MySQL 5.0.86**。
+
+目前進度：
+
+- `mysql-5.0.86` 已下載並解壓。
+- `./configure` 已成功完成。
+- 目前缺 `gmake`，需安裝 `developer/build/gnu-make` 後才能繼續編譯。
 
 ## 主線版本
 
@@ -39,8 +61,8 @@ ttales2/ttales  -> 32-bit i386 Solaris ELF, /usr/lib/ld.so.1
 
 - Ubuntu / Linux 不適合作為 Server OS。
 - Parallels on M1 不作為主線。
-- 主線改為 UTM / QEMU 模擬 x86 Solaris-like guest。
-- OS 測試優先序：OpenIndiana -> OpenSolaris 2010 snv_134 -> Solaris 10 x86。
+- 主線為 UTM / QEMU 模擬 x86 Solaris-like guest。
+- 目前 OpenIndiana 已可行，不再優先測 OpenSolaris / Solaris 10。
 
 ## 不提交原則
 
@@ -69,9 +91,12 @@ ttales2/ttales  -> 32-bit i386 Solaris ELF, /usr/lib/ld.so.1
 .
 ├─ README.md
 ├─ docs/
-│  ├─ 00-utm-installation-flow.md
+│  ├─ 00-utm-current-progress.md
 │  ├─ 01-pixnet-install-flow.md
+│  ├─ 02-utm-solaris-settings.md
 │  ├─ 05-tw404t-static-analysis.md
+│  ├─ 07-berkeleydb-setup.md
+│  ├─ 08-mysql-setup.md
 │  └─ 99-troubleshooting.md
 ├─ scripts/
 │  └─ download_sources.sh
@@ -82,9 +107,9 @@ ttales2/ttales  -> 32-bit i386 Solaris ELF, /usr/lib/ld.so.1
 
 ## 下一步
 
-1. 在 UTM 建立 x86 Solaris-like VM。
-2. 優先測 OpenIndiana；若 library 相容性不足，再測 OpenSolaris 2010 snv_134。
-3. 解壓 `tw404t.tar.gz` 後執行 `file` / `ldd`。
-4. 補 BerkeleyDB 3.3 與 MySQL 5.0。
-5. 執行 `change-ip`、`change-hosts`、`twsrv-init`、`create-accounts`、`start-twsrv`。
-6. Windows client 修改 `IP.INI` 指向 VM IP。
+1. 安裝 `gmake`：`sudo pkg install developer/build/gnu-make`。
+2. 在 `mysql-5.0.86` 執行 `gmake`。
+3. 執行 `sudo gmake install`。
+4. 確認 MySQL 路徑，必要時建立 `/usr/local/mysql` 相容 symlink。
+5. 執行 `twsrv-init`、`create-accounts`、`start-twsrv`。
+6. 啟動 `ttales0`、`ttales1`、`ttales2` 後，再測 Windows client。
