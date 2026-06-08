@@ -13,12 +13,24 @@
 --      before '=' is lowercase L, not number 1.
 --   4. This file intentionally avoids changing the global MySQL my.cnf. Charset is
 --      handled at database/table level for safer reuse on /usr/local/mysql builds.
+--   5. The original guide also forced the old MySQL password hash
+--      6e4637a643a8fc2b for gamedb@twsrv. This file applies the same hash to
+--      common local/LAN host forms used by DBs.ttales. If your server IP changes,
+--      adjust or add the corresponding gamedb@<IP> grant.
 
 SET NAMES utf8;
 
 GRANT ALL PRIVILEGES ON *.* TO 'gamedb'@'localhost' IDENTIFIED BY 'vlql=nrt' WITH GRANT OPTION;
 GRANT ALL PRIVILEGES ON *.* TO 'gamedb'@'127.0.0.1' IDENTIFIED BY 'vlql=nrt' WITH GRANT OPTION;
 GRANT ALL PRIVILEGES ON *.* TO 'gamedb'@'%' IDENTIFIED BY 'vlql=nrt' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* TO 'gamedb'@'twsrv' IDENTIFIED BY 'vlql=nrt' WITH GRANT OPTION;
+GRANT ALL PRIVILEGES ON *.* TO 'gamedb'@'192.168.1.149' IDENTIFIED BY 'vlql=nrt' WITH GRANT OPTION;
+
+UPDATE mysql.user
+SET Password='6e4637a643a8fc2b'
+WHERE User='gamedb'
+  AND Host IN ('localhost','127.0.0.1','%','twsrv','192.168.1.149');
+
 FLUSH PRIVILEGES;
 
 CREATE DATABASE IF NOT EXISTS ttales12_account DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
