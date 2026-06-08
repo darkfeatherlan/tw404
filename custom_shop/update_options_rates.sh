@@ -14,10 +14,10 @@ cp "$FILE" "$BACKUP"
 echo "Backup created: $BACKUP"
 
 # EXP rate: Option gameopt XP_C i <value>
-sed -i 's/^Option[[:space:]]\+gameopt[[:space:]]\+XP_C[[:space:]]\+i[[:space:]]\+[0-9][0-9]*$/Option\tgameopt\t\tXP_C\t\t\t\ti\t2000/' "$FILE"
+perl -0777 -i -pe 's/^Option\s+gameopt\s+XP_C\s+i\s+\S+\s*$/Option\tgameopt\t\tXP_C\t\t\t\ti\t2000/m' "$FILE"
 
 # Monster corpse drop rate: Option gameopt monsterCorpseDropRate f <value>
-sed -i 's/^Option[[:space:]]\+gameopt[[:space:]]\+monsterCorpseDropRate[[:space:]]\+f[[:space:]]\+[0-9.][0-9.]*$/Option\tgameopt\t\tmonsterCorpseDropRate\t\tf\t2000/' "$FILE"
+perl -0777 -i -pe 's/^Option\s+gameopt\s+monsterCorpseDropRate\s+f\s+\S+\s*$/Option\tgameopt\t\tmonsterCorpseDropRate\t\tf\t2000/m' "$FILE"
 
 echo "Options rates updated."
 echo "Check result:"
