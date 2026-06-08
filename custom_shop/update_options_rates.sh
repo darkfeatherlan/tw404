@@ -13,11 +13,10 @@ BACKUP="${FILE}.bak.$(date +%Y%m%d%H%M%S)"
 cp "$FILE" "$BACKUP"
 echo "Backup created: $BACKUP"
 
-# EXP rate: Option gameopt XP_C i <value>
-perl -0777 -i -pe 's/^Option\s+gameopt\s+XP_C\s+i\s+\S+\s*$/Option\tgameopt\t\tXP_C\t\t\t\ti\t2000/m' "$FILE"
-
-# Monster corpse drop rate: Option gameopt monsterCorpseDropRate f <value>
-perl -0777 -i -pe 's/^Option\s+gameopt\s+monsterCorpseDropRate\s+f\s+\S+\s*$/Option\tgameopt\t\tmonsterCorpseDropRate\t\tf\t2000/m' "$FILE"
+# Replace only the final value on the target lines.
+# Keep original tabs/spaces and avoid rebuilding the whole line.
+perl -i -pe 'if (/^Option\s+gameopt\s+.*XP_C/) { s/(\s+)\S+\s*$/\12000/; }' "$FILE"
+perl -i -pe 'if (/^Option\s+gameopt\s+.*monsterCorpseDropRate/) { s/(\s+)\S+\s*$/\12000/; }' "$FILE"
 
 echo "Options rates updated."
 echo "Check result:"
