@@ -16,23 +16,64 @@ Mac mini M1
 
 - OpenIndiana 已在 UTM 成功安裝，`uname` 顯示 `i386`。
 - `tw404t` 核心檔案為 32-bit i386 Solaris ELF，可被 OpenIndiana 辨識。
-- `libstdc++.so.6`、`libgcc_s.so.1` 已透過 `/usr/gcc/10/lib` 解決。
+- MySQL 5.0.86 已在 OpenIndiana 上成功編譯、安裝、初始化與啟動。
+- MySQL 已確認：
+  - `select version();` 回傳 `5.0.86`。
+  - `datadir` 為 `/usr/local/mysql/var/`。
+  - 3306 port 正常 LISTEN。
+  - 建庫、建表、insert/select 正常。
+  - mysqld 重啟後資料仍保留。
 - BerkeleyDB 3.3 已重新編譯成 32-bit 版本。
+- TW404 runtime library 已確認可透過 `LD_LIBRARY_PATH` 解決：
+
+```bash
+export LD_LIBRARY_PATH=/usr/local/BerkeleyDB.3.3-32/lib:/usr/gcc/10/lib:$LD_LIBRARY_PATH
+```
+
 - `db/db` 已成功啟動：
 
 ```text
 ENDRE DataBase Server ready, port: 45012
 ```
 
-## 目前卡點
+- `twsrv-init` 已成功初始化 `db/character` 與 `db/master` hash directories。
+- `ttales0` 已可啟動並開始載入 GameDB，例如：
 
-正在補 **MySQL 5.0.86**。
+```text
+GameDB (...:account) process started.
+GameDB (...:group) process started.
+GameDB (...:guild) process started.
+```
 
-目前進度：
+## 目前待處理
 
-- `mysql-5.0.86` 已下載並解壓。
-- `./configure` 已成功完成。
-- 目前缺 `gmake`，需安裝 `developer/build/gnu-make` 後才能繼續編譯。
+目前 `ttales0` 曾出現：
+
+```text
+group db [member] not ready. waiting
+```
+
+暫判斷不是 server binary 問題，而是 MySQL 內尚未完成 TW404 所需的 user、database 與 table 建置。下一步應依 `docs/db-inst.txt` 建立：
+
+```text
+gamedb user
+ttales12_account
+ttales12_castle
+ttales12_episode
+ttales12_friendList
+ttales12_gamestat
+ttales12_group
+ttales12_guild
+ttales12_pet
+ttales12_refuse
+ttales12_share
+```
+
+並匯入各 database 所需 table。
+
+## 暫時放棄項目
+
+OpenIndiana 目前內建 OpenSSH 10.3p1，`/usr/sbin/sshd -D -d` 會 Segmentation Fault。已確認不是單純 host key、SMF、hostname 或 missing library 問題。SSH 暫不列為主線，後續若需要再考慮 UTM shared directory、替代 SSH server 或換較舊 OpenIndiana。
 
 ## 主線版本
 
@@ -96,7 +137,10 @@ ttales2/ttales  -> 32-bit i386 Solaris ELF, /usr/lib/ld.so.1
 │  ├─ 02-utm-solaris-settings.md
 │  ├─ 05-tw404t-static-analysis.md
 │  ├─ 07-berkeleydb-setup.md
-│  ├─ 08-mysql-setup.md
+│  ├─ 08-mysql-5.0.86-openindiana.md
+│  ├─ 09-berkeleydb-runtime.md
+│  ├─ 10-client-launcher-replacement.md
+│  ├─ 11-change-ip-hosts-lan-mode.md
 │  └─ 99-troubleshooting.md
 ├─ scripts/
 │  └─ download_sources.sh
@@ -107,9 +151,27 @@ ttales2/ttales  -> 32-bit i386 Solaris ELF, /usr/lib/ld.so.1
 
 ## 下一步
 
-1. 安裝 `gmake`：`sudo pkg install developer/build/gnu-make`。
-2. 在 `mysql-5.0.86` 執行 `gmake`。
-3. 執行 `sudo gmake install`。
-4. 確認 MySQL 路徑，必要時建立 `/usr/local/mysql` 相容 symlink。
-5. 執行 `twsrv-init`、`create-accounts`、`start-twsrv`。
-6. 啟動 `ttales0`、`ttales1`、`ttales2` 後，再測 Windows client。
+1. 依 `docs/db-inst.txt` 建立 MySQL user、database 與 tables。
+2. 確認 `ttales12_group.member` table 是否建立成功。
+3. 重新啟動 MySQL。
+4. 設定 TW404 runtime：
+
+```bash
+source ~/tw404t/env.sh
+```
+
+或：
+
+```bash
+export LD_LIBRARY_PATH=/usr/local/BerkeleyDB.3.3-32/lib:/usr/gcc/10/lib:$LD_LIBRARY_PATH
+```
+
+5. 啟動 `db/db`：
+
+```bash
+cd ~/tw404t/db
+nohup ./db > db.log 2>&1 &
+```
+
+6. 啟動 `ttales0`、`ttales1`、`ttales2`。
+7. 處理 Windows client：日版 4.0.4 client + 繁中包 + 自製 launcher / `InphaseNXD.EXE` 參數啟動。
