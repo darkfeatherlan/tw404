@@ -38,5 +38,14 @@ perl -i -pe 's/^1000340(\s+)/1004391$1/' "$FILE"
 perl -i -pe 's/^1000341(\s+)/1004392$1/' "$FILE"
 perl -i -pe 's/^1000342(\s+)/1004393$1/' "$FILE"
 
+# Additional wing items appended after the original 23 replacements.
+perl -i -pe 's/^1000343(\s+)/1002790$1/' "$FILE"
+perl -i -pe 's/^1000317(\s+)/1002791$1/' "$FILE"
+perl -i -pe 's/^1000318(\s+)/1002792$1/' "$FILE"
+perl -i -pe 's/^1000319(\s+)/1003358$1/' "$FILE"
+perl -i -pe 's/^1000320(\s+)/1003359$1/' "$FILE"
+perl -i -pe 's/^1000321(\s+)/1003360$1/' "$FILE"
+perl -i -pe 's/^1000322(\s+)/1002859$1/' "$FILE"
+
 echo "Nar_Weapon item IDs updated."
-echo "Check result: grep -E '^[0-9]+' \"$FILE\" | head -23"
+echo "Check result: grep -E '^[0-9]+' \"$FILE\" | head -30"
